@@ -1,0 +1,139 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Excelで作ったCSVファイルを読み込む</title>
+<script type="text/javascript" src="xmlhttp.js"></script>
+<script type="text/javascript"><!--
+function loadTextFile(fName)
+{
+httpObj = createXMLHttpRequest(displayData);
+if (httpObj)
+{
+httpObj.open("GET",fName,true);
+httpObj.send(null);
+}
+}
+function displayData()
+{
+if ((httpObj.readyState == 4) && (httpObj.status == 200))
+{
+	//★CSVから配列変数へ読込
+	CSVtoAD(httpObj.responseText);
+	//★テーブル出力
+	output_table();
+}else{
+document.getElementById("resultData").innerText = "Loading...";
+}
+}
+// --></script>
+</head>
+<body>
+<h1>Excelで作ったCSVファイルを読み込む</h1>
+<form name="ajaxForm">
+<!--★-->
+<input type="button" value="sample2.csvファイル読み込み" onClick="loadTextFile('MM_db2.csv')">
+</form>
+<div id="resultData"></div>
+
+<script type="text/javascript"><!--
+//★CSVから配列変数へ読込
+function CSVtoAD(csv) {
+	var n,m;
+	
+	var count_rec = 0; //レコードを数える
+	var count_fld = 0; //フィールドを数える
+	
+	//改行コード
+	csv = csv.replace(/\r\n/g,"\n");
+	csv = csv.replace(/\r/g,"\n");
+	
+	//""（フィールド内の"に対応）
+	csv = csv.replace(/""/g,"&quot;");
+	
+	list = new Array();
+	
+	//データ毎の取得処理
+	n = 0;
+	do {
+		//次の改行位置
+		var eor = csv.indexOf("\n",n);
+		
+		if (eor > -1) {
+			if (csv.substring(n,eor) != "") {
+				//フィールド用配列
+				if (count_fld == 0) list[count_rec] = new Array();
+				
+				//先頭に「"」がある場合
+				var m = csv.indexOf("\"",n);
+				if (m == n) {
+					//次の「"」をデータの終わりとする
+					eod = csv.indexOf("\"",n+1) + 1;
+					//レコードの終わり位置の修正（""内の改行を無視）
+					eor = csv.indexOf("\n",eod);
+					
+					m = 1;
+				} else {
+					m = 0;
+					eod = n;
+				}
+				
+				//「,」の位置
+				eod = csv.indexOf(",",eod);
+				//改行の前にある場合
+				if ((eod > -1) && (eod < eor)) {
+					//そのままフィールドの終わりとする
+				} else {
+					//改行位置をフィールドの終わりとする
+					eod = eor;
+				}
+				
+				//配列変数へ
+				list[count_rec][count_fld] = csv.substring(n+m,eod-m);
+												
+				//レコードの終わり
+				if (eod == eor) {
+					count_rec++;
+					count_fld = 0;
+				} else {
+					count_fld++;
+				}
+				
+				//次の検索開始位置
+				n = eod + 1;
+					
+			} else {
+				count_fld = 0;
+				n = eor + 1;
+			}		
+		}
+		
+		if (n > csv.length) eor = -1;
+
+	} while (eor > -1);
+}
+
+//★テーブル出力
+function output_table() {
+	var n,m;
+	
+	var t = "<table border='2'>";
+	t += "<caption>レコード "+list.length+" / フィールド "+list[0].length+"</caption>";
+	for (n=0;n<list.length;n++) {
+		t += "<tr>";
+		//for (m=0;m<7;m++) {
+		for (m=0;m<list[n].length;m++) {
+			t += "<td>";
+			//t += n + "/" + m + "=";
+			//改行コード変換
+			t += list[n][m].replace(/\n/g,"<br>");
+			t += "</td>";
+		}
+		t += "</tr>";
+	}
+	t += "</table>";
+	document.getElementById("resultData").innerHTML = t;
+}
+// --></script>
+
+</body>
+</html>
